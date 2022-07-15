@@ -1,0 +1,70 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include "sem_com.h"
+#include "shm_com.h"
+ 
+
+#define IPC_KEY_PATH    "/"
+#define SHM_KEY_PROJ    1
+#define SEM_KEY_PROJ    2
+
+int main()
+{
+    
+    int shm_id,sem_id;
+    shm_buf *shmbuf;
+    /*获得共享内存*/    
+    if((shm_id = shmget(ftok(IPC_KEY_PATH,SHM_KEY_PROJ),sizeof(shm_buf),IPC_CREAT|0666)) <0 )
+    {
+        perror("shmget");
+        exit(-1);
+    }
+    printf("consumer\'s shm_id:%d\n",shm_id);
+    /*获得信号量集合*/
+    if((sem_id = semget(ftok(IPC_KEY_PATH,SEM_KEY_PROJ),1,IPC_CREAT|0666)) < 0 )/*只有一个信号量*/
+    {
+        perror("semget");
+        exit(-1);
+    }
+    printf("consumer\'s sem_id:%d\n",sem_id);
+    /*映射共享内存到当前进程*/  
+    if((shmbuf = (shm_buf *)shmat(shm_id,NULL,0)) <0 )
+    {
+        perror("shmat");
+        exit(-1);
+    }
+    printf("shared memory init  sucessful\n");
+    /*读取共享内存中数据*/
+    do
+    {
+        sem_p(sem_id);
+        printf("Data from shared memory : process[%d],%s \n",shmbuf->pid,shmbuf->buffer);
+        /*读取数据后将共享内存清空*/
+        if (strncmp(shmbuf->buffer,"quit",4) == 0 )
+        {
+            break;
+        }
+        shmbuf->pid = 0 ;
+        memset(shmbuf->buffer,0,SHM_BUFSIZE);
+        sem_v(sem_id);
+
+    } while (1); 
+
+    /*解除共享内存映射*/
+    if (shmdt(shmbuf) < 0 ) 
+    {
+        perror("shmdt");
+        exit(-1);
+    }
+    /*删除共享内存*/
+    if(shmctl(shm_id,IPC_RMID,NULL) < 0 )
+    {
+        perror("shmctl_remove");
+        exit(-1);
+    }
+    exit(0);
+}
+
+
