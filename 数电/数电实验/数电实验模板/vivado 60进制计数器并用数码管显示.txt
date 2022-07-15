@@ -1,0 +1,151 @@
+module second(
+input wire clk,
+output reg sec);
+reg [27:0]q1;
+always @(posedge clk)
+    begin 
+        if(q1==50000000)
+            begin
+                q1<=0;
+                sec<=~sec;
+             end
+    else
+        q1<=q1+1;
+    end
+endmodule
+
+
+module sixty(
+input wire clk,
+output reg [3:0] cnt60_L,
+output reg [3:0] cnt60_H,
+output reg carry
+    );
+    initial begin
+        cnt60_L=8;
+        cnt60_H=5;
+    end
+    
+    always @(posedge clk)
+        begin
+            carry<=0;
+            cnt60_L<=cnt60_L+1;
+            if(cnt60_L==9)
+                begin
+                    cnt60_L<=0;
+                    cnt60_H<=cnt60_H+1;
+                end 
+           if(cnt60_H==5 && cnt60_L==9)
+              begin
+                   cnt60_L<=0;
+                   cnt60_H<=0;
+                   carry<=1;
+             end
+         end
+endmodule
+
+module top(
+    input wire clk,
+    output wire [3:0] second_L,
+    output wire [3:0] second_H
+    );
+    wire jinwei;
+
+    second U0(
+        .clk(clk),
+        .sec(jinwei)
+    );
+
+    sixty U1(
+        .clk(jinwei),
+        .cnt60_L(second_L),
+        .cnt60_H(second_H)
+        );
+endmodule
+
+
+module x7seg_4bit(
+input clk,
+input rst_n,
+//input [7:0] x,      //等待显示的BCD码
+output reg [6:0] a_to_g, //段信号
+output reg [1:0] an  //位选信号
+);
+wire [3:0]L;
+wire [3:0]H;
+
+top zhuogege(
+.clk(clk),
+.second_L(L),
+.second_H(H)
+);
+wire [7:0]x={H,L};
+//x={H,L};
+//时钟分频 计数器
+reg [19:0] clkdiv;
+always @(posedge clk or negedge rst_n)
+begin
+	if(!rst_n)
+		clkdiv<=20'd0;
+	else
+		clkdiv<=clkdiv+1;
+end
+/*利用计数器自动溢出时间，即就是clkdiv从0~11111111111111111111循环计数，
+则clk[19]会在0~1之间以5.24ms为时间间隔变化  2^19=524288
+（即后19位全0到全1的计数时间）
+*/
+
+//bitcnt: 位扫描信号 0~1循环变化 扫描周期 5.24ms    控制总扫描时间不超过10ms，单个数码管显示时间约为5ms
+wire  bitcnt;
+assign bitcnt=clkdiv[19];
+
+//an:位选信号产生，高有效
+always @(posedge clk or negedge rst_n)
+begin 
+if(!rst_n)
+	an=2'd0;
+else
+	case(bitcnt)
+	1'd0:an=4'b01;
+	1'd1:an=4'b10;
+    endcase
+end
+
+
+//digit 当前带显示的数字
+ 
+ reg [3:0]digit;
+always @(posedge clk or negedge rst_n)
+begin
+if (!rst_n)
+	digit=4'd0;
+else
+	case(bitcnt)
+	2'd0:digit=x[3:0];
+	2'd1:digit=x[7:4];
+	default:digit=4'd0;
+	endcase
+end
+
+//a_to_g: 段码信号，共阴极数码管，段码高有效。 7段译码表
+always @(posedge clk or negedge rst_n)
+begin
+if(!rst_n)
+	a_to_g=7'b1111111;
+else
+	case(digit)
+	0:a_to_g=7'b1111110;//段码位序由高到低为a-g
+	1:a_to_g=7'b0110000;
+	2:a_to_g=7'b1101101;
+	3:a_to_g=7'b1111001;
+	4:a_to_g=7'b0110011;
+	5:a_to_g=7'b1011011;
+	6:a_to_g=7'b1011111;
+	7:a_to_g=7'b1110000;
+	8:a_to_g=7'b1111111;
+	9:a_to_g=7'b1111011;
+	default:a_to_g=7'b1111110;
+	endcase
+end
+endmodule
+
