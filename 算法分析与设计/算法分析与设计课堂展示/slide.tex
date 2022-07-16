@@ -1,0 +1,98 @@
+\documentclass{beamer}
+\usepackage{ctex, hyperref}
+\usepackage[T1]{fontenc}
+
+% other packages
+\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
+\usepackage{graphicx,pstricks,listings,stackengine}
+
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+
+\author{麦骏}
+\title{分支限界法总结}
+\subtitle{课堂展示}
+\institute{信息科学技术学院}
+\date{2022年6月8日}
+\usepackage{JNU}
+
+% defs
+\def\cmd#1{\texttt{\color{red}\footnotesize $\backslash$#1}}
+\def\env#1{\texttt{\color{blue}\footnotesize #1}}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\definecolor{halfgray}{gray}{0.55}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries\color{deepblue},
+    emphstyle=\ttfamily\color{deepred},    % Custom highlighting style
+    stringstyle=\color{deepgreen},
+    numbers=left,
+    numberstyle=\small\color{halfgray},
+    rulesepcolor=\color{red!20!green!20!blue!20},
+    frame=shadowbox,
+}
+
+\begin{document}
+    
+    \kaishu
+    \begin{frame}
+        \titlepage
+        \begin{figure}[htpb]
+            \begin{center}
+                \includegraphics[width=0.4\linewidth]{pic/jnu.png}
+            \end{center}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}{分支限界法}
+        \begin{itemize}
+            \item 搜索算法主要优化在于剪枝力度。
+            \item 分支限界法的精髓在于搜索树子树内上下界函数的确定。
+            \item 当加入优先队列优化时，每次会选择一个子树可能最优的节点进行扩展。
+            \item 但上下界相等时，说明已经获得子树内最优的答案。又因为每次选择的节点为全局可能最优的节点。那么当上下界相等时，该节点就是全局最优节点。
+            \item 若需要求最小值，那么子树下界作为优先级，子树上界用来更新答案。若需要求最大值，则子树上界作为优先级，下界用来更新答案。
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{迭代加深搜索}
+        \begin{itemize}
+            \item 有一个长度为$n$全排列$p_i$.每次可以将某个前缀reverse,求最少几次操作可以将排列升序排序.
+            \item $n \leq 25$.
+        \end{itemize}
+    \end{frame}
+    
+    \begin{frame}{迭代加深搜索}
+        \begin{itemize}
+            \item 若采用分支限界法，则子树下界可以定义为$p_i \neq p_{i+1}$的位置的个数，而子树上界可以贪心求得。
+            \item 子树上界收敛速度慢，时空的浪费严重。
+        \end{itemize}
+    \end{frame}
+    
+    \begin{frame}{迭代加深搜索}
+        \begin{itemize}
+            \item 观察到答案与子树上界都是$O(n)$，可以从小到大枚举答案进行dfs搜索。
+            \item 每次剪枝剪去子树下界大于枚举的答案的节点。
+        \end{itemize}
+    \end{frame}
+    
+    \begin{frame}{总结}
+        \begin{itemize}
+            \item 以上算法主要通过对于子树上下界估值进行剪枝，上下界确定的精确度决定了剪枝的力度。
+            \item 另外，当上下界拥有较为特殊的性质时，可以调整搜索方式，进行优化。
+        \end{itemize}
+    \end{frame}
+    
+    \begin{frame}
+        \begin{center}
+            {\Huge\calligra Thanks!}
+        \end{center}
+    \end{frame}
+
+\end{document}
